@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tian's Weekly OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141416;
+    --border: #1f1f24;
+    --text: #e8e6e0;
+    --muted: #5a5a68;
+    --accent: #c8f060;
+    --accent2: #60a8f0;
+    --accent3: #f0a060;
+    --accent4: #f060a0;
+    --accent5: #a060f0;
+
+    --deep: #c8f060;
+    --work: #60a8f0;
+    --content: #f0a060;
+    --personal: #a060f0;
+    --recovery: #60f0b8;
+    --meeting: #f060a0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 40px 24px;
+    overflow-x: hidden;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .title-block h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -2px;
+    color: var(--text);
+  }
+
+  .title-block h1 span {
+    color: var(--accent);
+  }
+
+  .title-block p {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .year-badge {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 6px 14px;
+    letter-spacing: 0.1em;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 36px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Weekly Grid */
+  .week-grid {
+    display: grid;
+    grid-template-columns: 72px repeat(7, 1fr);
+    gap: 0;
+    border: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  /* Time axis */
+  .time-col {
+    border-right: 1px solid var(--border);
+  }
+
+  .time-header {
+    height: 44px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .time-slot {
+    height: 52px;
+    display: flex;
+    align-items: flex-start;
+    padding: 6px 8px 0;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Day columns */
+  .day-col {
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+
+  .day-col:last-child { border-right: none; }
+
+  .day-header {
+    height: 44px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .day-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .day-col.weekend .day-name { color: var(--border); }
+  .day-col.today .day-name { color: var(--accent); }
+
+  .day-slots {
+    position: relative;
+  }
+
+  .empty-slot {
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Events */
+  .event-block {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    border-radius: 3px;
+    padding: 4px 6px;
+    z-index: 2;
+    overflow: hidden;
+  }
+
+  .event-block .ev-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .event-block .ev-time {
+    font-size: 8px;
+    opacity: 0.6;
+    margin-top: 1px;
+  }
+
+  .type-deep {
+    background: color-mix(in srgb, var(--deep) 15%, transparent);
+    border-left: 2px solid var(--deep);
+    color: var(--deep);
+  }
+
+  .type-work {
+    background: color-mix(in srgb, var(--work) 15%, transparent);
+    border-left: 2px solid var(--work);
+    color: var(--work);
+  }
+
+  .type-content {
+    background: color-mix(in srgb, var(--content) 15%, transparent);
+    border-left: 2px solid var(--content);
+    color: var(--content);
+  }
+
+  .type-personal {
+    background: color-mix(in srgb, var(--personal) 15%, transparent);
+    border-left: 2px solid var(--personal);
+    color: var(--personal);
+  }
+
+  .type-recovery {
+    background: color-mix(in srgb, var(--recovery) 15%, transparent);
+    border-left: 2px solid var(--recovery);
+    color: var(--recovery);
+  }
+
+  .type-meeting {
+    background: color-mix(in srgb, var(--meeting) 15%, transparent);
+    border-left: 2px solid var(--meeting);
+    color: var(--meeting);
+  }
+
+  /* Principles section */
+  .principles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .principle-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .principle-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .principle-card.p-deep::before { background: var(--deep); }
+  .principle-card.p-work::before { background: var(--work); }
+  .principle-card.p-content::before { background: var(--content); }
+  .principle-card.p-balance::before { background: var(--recovery); }
+
+  .principle-card .card-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .principle-card .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+
+  .principle-card .card-body {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .principle-card .card-body strong {
+    color: var(--text);
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    margin-bottom: 40px;
+    overflow: hidden;
+  }
+
+  .stat {
+    flex: 1;
+    padding: 20px 16px;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Footer note */
+  .footnote {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    line-height: 1.8;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+  }
+
+  .footnote strong { color: var(--text); }
+
+  @media (max-width: 700px) {
+    .week-grid { grid-template-columns: 44px repeat(7, 1fr); }
+    .time-slot, .event-block .ev-time { display: none; }
+    .event-block .ev-label { font-size: 8px; }
+    .stats-row { flex-wrap: wrap; }
+    .stat { min-width: 50%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="title-block">
+      <h1>Weekly <span>OS</span></h1>
+      <p>Tian Shi — Design × AI × Content System</p>
+    </div>
+    <div class="year-badge">2026</div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--deep)"></div> Deep Work (PureFacts)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--work)"></div> Work / Meetings</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--content)"></div> AI + Content Creation</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--personal)"></div> Personal / Admin</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--recovery)"></div> Workout / Recovery</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--meeting)"></div> Night Meeting (CA)</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-num" style="color:var(--deep)">10h</div>
+      <div class="stat-label">Deep Work / wk</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:var(--content)">8h</div>
+      <div class="stat-label">AI + Content / wk</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:var(--recovery)">5×</div>
+      <div class="stat-label">Workouts / wk</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:var(--meeting)">3×</div>
+      <div class="stat-label">CA Meetings / wk</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:var(--accent)">7h</div>
+      <div class="stat-label">Protected Sleep</div>
+    </div>
+  </div>
+
+  <!-- Weekly Calendar Grid -->
+  <!-- Hours shown: 6am to 11pm = 17 slots -->
+  <div class="week-grid" id="calendar"></div>
+
+  <!-- Principles -->
+  <div class="principles">
+    <div class="principle-card p-deep">
+      <div class="card-label">Block 01</div>
+      <div class="card-title">Morning Deep Work</div>
+      <div class="card-body">
+        <strong>8–10AM</strong> is protected. No Slack, no email. This is your peak cognitive window — use it for design solutioning, complex PureFees problems, and design system work. <strong>2 hours × 5 days = 10h/wk of real output.</strong>
+      </div>
+    </div>
+    <div class="principle-card p-work">
+      <div class="card-label">Block 02</div>
+      <div class="card-title">Work Execution</div>
+      <div class="card-body">
+        <strong>10AM–1PM</strong> handles collaborative work: Jira, reviews, async comms, iterating on feedback. Keep a <strong>daily 3-task list</strong> — only 3 things that matter. Everything else is noise.
+      </div>
+    </div>
+    <div class="principle-card p-content">
+      <div class="card-label">Block 03</div>
+      <div class="card-title">AI + Content Window</div>
+      <div class="card-body">
+        <strong>3–5PM</strong> is your creative lab. Build agents, write posts, experiment with tools, document learnings. <strong>Treat this like a second job.</strong> Don't skip it for work overflow. Tuesday/Thursday are dedicated content publish days.
+      </div>
+    </div>
+    <div class="principle-card p-balance">
+      <div class="card-label">Block 04</div>
+      <div class="card-title">Recovery + Social</div>
+      <div class="card-body">
+        Workout at <strong>6–7PM</strong> daily (5×/wk). This is your hard reset before the CA meeting. Weekends protect social time and recharge. <strong>Sunday is planning day</strong> — 1 hour to set up the week.
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <strong>Key rules:</strong> Deep work blocks are sacred — no meetings allowed. CA meetings end by 9:30PM; wind down by 10PM, sleep by 11PM. 
+    Lunch (1–2PM) and the 2–3PM buffer are for rest, walks, and admin — not overflow work. 
+    <strong>Saturday morning</strong> is a 2h AI/content sprint. <strong>Sunday evening</strong> is weekly review + plan. 
+    Content creation is non-negotiable — it runs parallel to your job, not after it's "done."
+  </div>
+
+</div>
+
+<script>
+const SLOT_HEIGHT = 52;
+const START_HOUR = 6;
+
+const hours = [];
+for (let h = START_HOUR; h <= 23; h++) {
+  hours.push(h);
+}
+
+const days = [
+  { key: 'mon', label: 'MON', weekend: false },
+  { key: 'tue', label: 'TUE', weekend: false },
+  { key: 'wed', label: 'WED', weekend: false },
+  { key: 'thu', label: 'THU', weekend: false },
+  { key: 'fri', label: 'FRI', weekend: false },
+  { key: 'sat', label: 'SAT', weekend: true },
+  { key: 'sun', label: 'SUN', weekend: true },
+];
+
+// Events: { day, start (decimal hour), end (decimal hour), label, type }
+const events = [
+  // MONDAY
+  { day: 'mon', start: 6, end: 7, label: 'Morning Routine', type: 'personal' },
+  { day: 'mon', start: 8, end: 10, label: '⚡ Deep Work', type: 'deep' },
+  { day: 'mon', start: 10, end: 13, label: 'Work / Jira / Comms', type: 'work' },
+  { day: 'mon', start: 13, end: 14, label: 'Lunch + Rest', type: 'recovery' },
+  { day: 'mon', start: 14, end: 15, label: 'Buffer / Admin', type: 'personal' },
+  { day: 'mon', start: 15, end: 17, label: '🤖 AI Lab', type: 'content' },
+  { day: 'mon', start: 18, end: 19, label: '💪 Workout', type: 'recovery' },
+  { day: 'mon', start: 19, end: 20, label: 'Dinner + Decompress', type: 'personal' },
+  { day: 'mon', start: 20, end: 21.5, label: '📞 CA Meeting', type: 'meeting' },
+
+  // TUESDAY
+  { day: 'tue', start: 6, end: 7, label: 'Morning Routine', type: 'personal' },
+  { day: 'tue', start: 8, end: 10, label: '⚡ Deep Work', type: 'deep' },
+  { day: 'tue', start: 10, end: 13, label: 'Work / Reviews', type: 'work' },
+  { day: 'tue', start: 13, end: 14, label: 'Lunch + Rest', type: 'recovery' },
+  { day: 'tue', start: 14, end: 15, label: 'Buffer / Admin', type: 'personal' },
+  { day: 'tue', start: 15, end: 17, label: '✍️ Content Creation', type: 'content' },
+  { day: 'tue', start: 18, end: 19, label: '💪 Workout', type: 'recovery' },
+  { day: 'tue', start: 19, end: 20, label: 'Dinner + Decompress', type: 'personal' },
+  { day: 'tue', start: 20, end: 21.5, label: '📞 CA Meeting', type: 'meeting' },
+
+  // WEDNESDAY
+  { day: 'wed', start: 6, end: 7, label: 'Morning Routine', type: 'personal' },
+  { day: 'wed', start: 8, end: 10, label: '⚡ Deep Work', type: 'deep' },
+  { day: 'wed', start: 10, end: 13, label: 'Work / Iteration', type: 'work' },
+  { day: 'wed', start: 13, end: 14, label: 'Lunch + Rest', type: 'recovery' },
+  { day: 'wed', start: 14, end: 15, label: 'Buffer / Admin', type: 'personal' },
+  { day: 'wed', start: 15, end: 17, label: '🤖 AI Experiments', type: 'content' },
+  { day: 'wed', start: 18, end: 19, label: '💪 Workout', type: 'recovery' },
+  { day: 'wed', start: 19, end: 21.5, label: 'Social / Free Time', type: 'personal' },
+
+  // THURSDAY
+  { day: 'thu', start: 6, end: 7, label: 'Morning Routine', type: 'personal' },
+  { day: 'thu', start: 8, end: 10, label: '⚡ Deep Work', type: 'deep' },
+  { day: 'thu', start: 10, end: 13, label: 'Work / Design', type: 'work' },
+  { day: 'thu', start: 13, end: 14, label: 'Lunch + Rest', type: 'recovery' },
+  { day: 'thu', start: 14, end: 15, label: 'Buffer / Admin', type: 'personal' },
+  { day: 'thu', start: 15, end: 17, label: '✍️ Content + Publish', type: 'content' },
+  { day: 'thu', start: 18, end: 19, label: '💪 Workout', type: 'recovery' },
+  { day: 'thu', start: 19, end: 20, label: 'Dinner + Decompress', type: 'personal' },
+  { day: 'thu', start: 20, end: 21.5, label: '📞 CA Meeting', type: 'meeting' },
+
+  // FRIDAY
+  { day: 'fri', start: 6, end: 7, label: 'Morning Routine', type: 'personal' },
+  { day: 'fri', start: 8, end: 10, label: '⚡ Deep Work', type: 'deep' },
+  { day: 'fri', start: 10, end: 13, label: 'Work / Wrap-up', type: 'work' },
+  { day: 'fri', start: 13, end: 14, label: 'Lunch + Rest', type: 'recovery' },
+  { day: 'fri', start: 14, end: 15, label: 'Weekly Review (Work)', type: 'personal' },
+  { day: 'fri', start: 15, end: 17, label: '🤖 AI Build / Reflect', type: 'content' },
+  { day: 'fri', start: 18, end: 19, label: '💪 Workout', type: 'recovery' },
+  { day: 'fri', start: 19, end: 22, label: 'Social / Dinner / Free', type: 'personal' },
+
+  // SATURDAY
+  { day: 'sat', start: 7, end: 8, label: 'Slow Morning', type: 'personal' },
+  { day: 'sat', start: 8, end: 10, label: '✍️ Content Sprint', type: 'content' },
+  { day: 'sat', start: 10, end: 12, label: '🤖 AI Projects', type: 'content' },
+  { day: 'sat', start: 12, end: 14, label: 'Lunch + Rest', type: 'recovery' },
+  { day: 'sat', start: 14, end: 22, label: 'Social / Explore / Recharge', type: 'personal' },
+
+  // SUNDAY
+  { day: 'sun', start: 7, end: 9, label: 'Slow Morning + Walk', type: 'recovery' },
+  { day: 'sun', start: 9, end: 11, label: 'Personal Learning', type: 'content' },
+  { day: 'sun', start: 11, end: 14, label: 'Social / Brunch / Rest', type: 'personal' },
+  { day: 'sun', start: 14, end: 17, label: 'Free / Recharge', type: 'personal' },
+  { day: 'sun', start: 17, end: 18.5, label: '💪 Workout', type: 'recovery' },
+  { day: 'sun', start: 20, end: 21, label: '📋 Weekly Planning', type: 'personal' },
+];
+
+function buildCalendar() {
+  const cal = document.getElementById('calendar');
+
+  // Time column header
+  const timeHeader = document.createElement('div');
+  timeHeader.className = 'time-col';
+  const th = document.createElement('div');
+  th.className = 'time-header';
+  timeHeader.appendChild(th);
+
+  // Time slots
+  hours.forEach(h => {
+    const slot = document.createElement('div');
+    slot.className = 'time-slot';
+    slot.textContent = h === 12 ? '12PM' : h < 12 ? `${h}AM` : `${h-12}PM`;
+    timeHeader.appendChild(slot);
+  });
+  cal.appendChild(timeHeader);
+
+  // Day columns
+  days.forEach(day => {
+    const col = document.createElement('div');
+    col.className = 'day-col' + (day.weekend ? ' weekend' : '');
+
+    const header = document.createElement('div');
+    header.className = 'day-header';
+    header.innerHTML = `<span class="day-name">${day.label}</span>`;
+    col.appendChild(header);
+
+    const slotsContainer = document.createElement('div');
+    slotsContainer.className = 'day-slots';
+    slotsContainer.style.position = 'relative';
+    slotsContainer.style.height = `${hours.length * SLOT_HEIGHT}px`;
+
+    // Empty slot lines
+    hours.forEach(() => {
+      const s = document.createElement('div');
+      s.className = 'empty-slot';
+      slotsContainer.appendChild(s);
+    });
+
+    // Events for this day
+    const dayEvents = events.filter(e => e.day === day.key);
+    dayEvents.forEach(ev => {
+      const topPct = (ev.start - START_HOUR) * SLOT_HEIGHT;
+      const height = (ev.end - ev.start) * SLOT_HEIGHT - 3;
+      const block = document.createElement('div');
+      block.className = `event-block type-${ev.type}`;
+      block.style.top = `${topPct + 1}px`;
+      block.style.height = `${height}px`;
+
+      const startH = Math.floor(ev.start);
+      const startM = Math.round((ev.start % 1) * 60);
+      const endH = Math.floor(ev.end);
+      const endM = Math.round((ev.end % 1) * 60);
+      const fmt = (h, m) => {
+        const ampm = h < 12 ? 'a' : 'p';
+        const hr = h > 12 ? h - 12 : h;
+        return m === 0 ? `${hr}${ampm}` : `${hr}:${String(m).padStart(2,'0')}${ampm}`;
+      };
+
+      block.innerHTML = `
+        <div class="ev-label">${ev.label}</div>
+        ${height > 30 ? `<div class="ev-time">${fmt(startH,startM)}–${fmt(endH,endM)}</div>` : ''}
+      `;
+      slotsContainer.appendChild(block);
+    });
+
+    col.appendChild(slotsContainer);
+    cal.appendChild(col);
+  });
+}
+
+buildCalendar();
+</script>
+</body>
+</html>
